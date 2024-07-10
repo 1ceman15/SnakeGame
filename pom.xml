@@ -4,7 +4,7 @@
   <groupId>org.example</groupId>
   <artifactId>SnakeGame</artifactId>
   <packaging>jar</packaging>
-  <version>1.0-SNAPSHOT</version>
+  <version>1.1</version>
   <name>SnakeGame</name>
   <url>http://maven.apache.org</url>
 
@@ -17,6 +17,28 @@
       <scope>test</scope>
     </dependency>
   </dependencies>
+
+  <build>
+    <plugins>
+      <!-- Plugin to create JAR with manifest -->
+      <plugin>
+        <groupId>org.apache.maven.plugins</groupId>
+        <artifactId>maven-jar-plugin</artifactId>
+        <version>3.2.0</version>
+        <configuration>
+          <archive>
+            <manifest>
+              <mainClass>SnakeGame</mainClass>
+            </manifest>
+          </archive>
+        </configuration>
+      </plugin>
+
+      <!-- Plugin to create EXE from JAR -->
+
+    </plugins>
+  </build>
+
 
 
 </project>

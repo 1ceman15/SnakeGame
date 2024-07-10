@@ -7,7 +7,9 @@ import java.awt.event.ActionEvent;
 import java.awt.event.ActionListener;
 import java.awt.event.KeyAdapter;
 import java.awt.event.KeyEvent;
+import java.io.BufferedInputStream;
 import java.io.File;
+import java.io.InputStream;
 import java.util.Arrays;
 import java.util.Random;
 
@@ -19,7 +21,7 @@ public class GamePanel extends JPanel implements ActionListener {
     private static final int GAME_WIDTH = SCREEN_WIDTH-UNIT_SIZE;
     private static final int GAME_HEIGHT = SCREEN_HEIGHT - UNIT_SIZE;
     private static final int GAME_UNITS = (GAME_WIDTH*GAME_HEIGHT)/(UNIT_SIZE*UNIT_SIZE);
-    private static final int DELAY = 77;
+    private static final int DELAY = 80;
     private final int x[] = new int[GAME_UNITS];
     private final int y[] = new int[GAME_UNITS];
     private int bodyParts = 6;
@@ -30,10 +32,10 @@ public class GamePanel extends JPanel implements ActionListener {
     private boolean running = false;
     private Timer timer;
     private Random random;
-    private Image appleImage = new ImageIcon("src\\main\\resources\\Images\\Apple.png").getImage();
-    private Image treeImage = new ImageIcon("src\\main\\resources\\Images\\Tree.png").getImage();
-    private Image backgroundImage = new ImageIcon("src\\main\\resources\\Images\\Background.png").getImage();
-    private AudioInputStream audioInputStream;
+    private Image appleImage = new ImageIcon(getClass().getResource("/Images/Apple.png")).getImage();
+    private Image treeImage = new ImageIcon(getClass().getResource("/Images/Tree.png")).getImage();
+    private Image backgroundImage = new ImageIcon(getClass().getResource("/Images/Background.png")).getImage();
+    private AudioInputStream audio;
     private Clip clip;
 
     GamePanel(){
@@ -45,9 +47,12 @@ public class GamePanel extends JPanel implements ActionListener {
         x[0] = UNIT_SIZE*6;
         y[0] = UNIT_SIZE;
         try {
-            audioInputStream = AudioSystem.getAudioInputStream(new File("src/main/resources/Sounds/AppleByte.wav"));
+            InputStream audioStream = getClass().getResourceAsStream("/Sounds/AppleByte.wav");
+            audio = AudioSystem.getAudioInputStream(audioStream);
             clip = AudioSystem.getClip();
-        }catch (Exception e){}
+        }catch (Exception e){
+            System.out.printf(e.getMessage());
+        }
 
         for (int i = 1; i < 6; i++) {
             y[i] = UNIT_SIZE;
@@ -99,13 +104,19 @@ public class GamePanel extends JPanel implements ActionListener {
             Graphics2D g2d = (Graphics2D) g;
             for(int i = 0; i< bodyParts;i++) {
                 if(i == 0) {
-                    g.setColor(new Color(120, 5, 152));
-                    g.fillRoundRect(x[i], y[i], UNIT_SIZE-1, UNIT_SIZE-1,15,15);
+                    g2d.setColor(new Color(255, 140, 0));
+                    g2d.fillRoundRect(x[i], y[i], UNIT_SIZE-7, UNIT_SIZE-7,15,15);
+                    g2d.setColor(new Color(136, 63, 1));
+                    g2d.setStroke(new BasicStroke(4));
+                    g2d.drawRoundRect(x[i], y[i], UNIT_SIZE-7, UNIT_SIZE-7,15,15);
 
                 }
                 else {
-                    g.setColor(new Color(95, 7, 225));
-                    g.fillRoundRect(x[i], y[i], UNIT_SIZE-1, UNIT_SIZE-1,15,15);
+                    g2d.setColor(new Color(255, 140, 0));
+                    g2d.fillRoundRect(x[i], y[i], UNIT_SIZE-7, UNIT_SIZE-7,15,15);
+                    g2d.setColor(new Color(126, 55, 2));
+                    g2d.drawRoundRect(x[i], y[i], UNIT_SIZE-7, UNIT_SIZE-7,15,15);
+
                 }
             }
 
@@ -120,7 +131,7 @@ public class GamePanel extends JPanel implements ActionListener {
 
     }
     public void newApple(){
-        boolean isAppleOnSnake = false;
+        boolean isAppleOnSnake;
         do {
             isAppleOnSnake = false;
             appleX = (1 + random.nextInt((GAME_WIDTH - UNIT_SIZE) / UNIT_SIZE)) * UNIT_SIZE;
@@ -161,18 +172,20 @@ public class GamePanel extends JPanel implements ActionListener {
             bodyParts++;
             applesEaten++;
             try {
-                AudioInputStream audioInputStream = AudioSystem.getAudioInputStream(new File("src/main/resources/Sounds/AppleByte.wav"));
+                InputStream audioStream = new BufferedInputStream(getClass().getResourceAsStream("/Sounds/AppleByte.wav"));
+                audio = AudioSystem.getAudioInputStream(audioStream);
 
                 Clip clip = AudioSystem.getClip();
 
-                clip.open(audioInputStream);
+                clip.open(audio);
 
                 clip.start();
 
-                newApple();
+
             }catch (Exception e){
                 System.out.printf(e.getMessage());
             }
+            newApple();
         }
     }
 
@@ -217,6 +230,19 @@ public class GamePanel extends JPanel implements ActionListener {
         FontMetrics metrics2 = getFontMetrics(g.getFont());
         g.drawString("Game Over", (SCREEN_WIDTH - metrics2.stringWidth("Game Over")) / 2, SCREEN_HEIGHT / 2);
 
+        try {
+             InputStream audioStream = new BufferedInputStream(getClass().getResourceAsStream("/Sounds/GameOverSound.wav"));
+             audio = AudioSystem.getAudioInputStream(audioStream);
+
+            Clip clip = AudioSystem.getClip();
+
+            clip.open(audio);
+
+            clip.start();
+
+        } catch (Exception e){
+            System.out.printf(e.getMessage());
+        }
 
         JButton restartButton = new JButton("Play Again");
         restartButton.setBackground(new Color(248, 248, 248));
