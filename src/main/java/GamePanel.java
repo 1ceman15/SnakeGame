@@ -30,13 +30,15 @@ public class GamePanel extends JPanel implements ActionListener {
     private int appleY;
     private char direction = 'R';
     private boolean running = false;
-    private Timer timer;
+    private Timer timer = new Timer(DELAY,this);;
     private Random random;
     private Image appleImage = new ImageIcon(getClass().getResource("/Images/Apple.png")).getImage();
     private Image treeImage = new ImageIcon(getClass().getResource("/Images/Tree.png")).getImage();
     private Image backgroundImage = new ImageIcon(getClass().getResource("/Images/Background.png")).getImage();
     private AudioInputStream audio;
     private Clip clip;
+    private JButton restartButton = new JButton("Play Again");
+    private boolean isGameOver = false;
 
     GamePanel(){
         random = new Random();
@@ -63,9 +65,20 @@ public class GamePanel extends JPanel implements ActionListener {
     }
 
     public void startGame() {
+        bodyParts = 6;
+        applesEaten = 0;
+        direction = 'R';
+        Arrays.fill(x, 0);
+        Arrays.fill(y, 0);
+        x[0] = UNIT_SIZE * 6;
+        y[0] = UNIT_SIZE;
+        for (int i = 1; i < 6; i++) {
+            y[i] = UNIT_SIZE;
+            x[i] = x[i - 1] - UNIT_SIZE;
+        }
         newApple();
         running = true;
-        timer = new Timer(DELAY,this);
+        isGameOver = false;
         timer.start();
     }
 
@@ -74,6 +87,9 @@ public class GamePanel extends JPanel implements ActionListener {
         super.paintComponent(g);
         g.drawImage(backgroundImage, 0, 0, getWidth(), getHeight(), this);
         draw(g);
+        if(isGameOver){
+           drawGameOver(g);
+        }
     }
 
     public void draw(Graphics g) {
@@ -95,13 +111,12 @@ public class GamePanel extends JPanel implements ActionListener {
                 g.drawImage(treeImage,0,i*UNIT_SIZE, UNIT_SIZE, UNIT_SIZE, this);
                 g.drawImage(treeImage,SCREEN_WIDTH-UNIT_SIZE,i*UNIT_SIZE, UNIT_SIZE, UNIT_SIZE, this);
 
-
-
 			}
 
 
             g.drawImage(appleImage,appleX, appleY, UNIT_SIZE, UNIT_SIZE, this);
             Graphics2D g2d = (Graphics2D) g;
+
             for(int i = 0; i< bodyParts;i++) {
                 if(i == 0) {
                     g2d.setColor(new Color(255, 140, 0));
@@ -121,15 +136,19 @@ public class GamePanel extends JPanel implements ActionListener {
             }
 
             g.setColor(new Color(0,0,0));
-            g.setFont( new Font("Bodoni MT Black",Font.BOLD, 32));
+            g.setFont( new Font("Bodoni MT Black",Font.BOLD, 28));
             FontMetrics metrics = getFontMetrics(g.getFont());
             g.drawString("Score: "+applesEaten, (SCREEN_WIDTH - metrics.stringWidth("Score: "+applesEaten))/2, g.getFont().getSize());
         }
         else {
-            gameOver(g);
+            if(!isGameOver) {
+                gameOver(g);
+            }
         }
 
     }
+
+
     public void newApple(){
         boolean isAppleOnSnake;
         do {
@@ -145,6 +164,8 @@ public class GamePanel extends JPanel implements ActionListener {
         }while (isAppleOnSnake);
 
     }
+
+
     public void move(){
         for(int i = bodyParts;i>0;i--) {
             x[i] = x[i-1];
@@ -167,6 +188,8 @@ public class GamePanel extends JPanel implements ActionListener {
         }
 
     }
+
+
     public void checkApple() {
         if((x[0] == appleX) && (y[0] == appleY)) {
             bodyParts++;
@@ -188,6 +211,7 @@ public class GamePanel extends JPanel implements ActionListener {
             newApple();
         }
     }
+
 
     public void checkCollisions() {
         //checks if head collides with body
@@ -217,22 +241,17 @@ public class GamePanel extends JPanel implements ActionListener {
             timer.stop();
         }
     }
+
+
+
     public void gameOver(Graphics g) {
+        isGameOver = true;
         // Score
-        g.setColor(new Color(0,0,0));
-        g.setFont(new Font("Bodoni MT Black", Font.BOLD, 40));
-        FontMetrics metrics1 = getFontMetrics(g.getFont());
-        g.drawString("Score: " + applesEaten, (SCREEN_WIDTH - metrics1.stringWidth("Score: " + applesEaten)) / 2, g.getFont().getSize());
-
-        // Game Over text
-
-        g.setFont(new Font("Bodoni MT Black", Font.BOLD, 75));
-        FontMetrics metrics2 = getFontMetrics(g.getFont());
-        g.drawString("Game Over", (SCREEN_WIDTH - metrics2.stringWidth("Game Over")) / 2, SCREEN_HEIGHT / 2);
+        drawGameOver(g);
 
         try {
-             InputStream audioStream = new BufferedInputStream(getClass().getResourceAsStream("/Sounds/GameOverSound.wav"));
-             audio = AudioSystem.getAudioInputStream(audioStream);
+            InputStream audioStream = new BufferedInputStream(getClass().getResourceAsStream("/Sounds/GameOverSound.wav"));
+            audio = AudioSystem.getAudioInputStream(audioStream);
 
             Clip clip = AudioSystem.getClip();
 
@@ -240,30 +259,21 @@ public class GamePanel extends JPanel implements ActionListener {
 
             clip.start();
 
-        } catch (Exception e){
+
+        } catch (Exception e) {
             System.out.printf(e.getMessage());
         }
 
-        JButton restartButton = new JButton("Play Again");
+
+
         restartButton.setBackground(new Color(248, 248, 248));
         restartButton.setFocusable(false);
-        restartButton.setFont(new Font("Bodoni MT Black", Font.BOLD, 30));
+        restartButton.setFont(new Font("Bodoni MT Black", Font.BOLD, 20));
         restartButton.setBounds((SCREEN_WIDTH - 200) / 2, SCREEN_HEIGHT / 2 + 100, 200, 50);
         restartButton.addActionListener(new ActionListener() {
             @Override
             public void actionPerformed(ActionEvent e) {
                 // Reset game state and start a new game
-                bodyParts = 6;
-                applesEaten = 0;
-                direction = 'R';
-                Arrays.fill(x, 0);
-                Arrays.fill(y, 0);
-                x[0] = UNIT_SIZE * 6;
-                y[0] = UNIT_SIZE;
-                for (int i = 1; i < 6; i++) {
-                    y[i] = UNIT_SIZE;
-                    x[i] = x[i - 1] - UNIT_SIZE;
-                }
                 remove(restartButton);
                 startGame();
             }
@@ -280,6 +290,19 @@ public class GamePanel extends JPanel implements ActionListener {
             checkCollisions();
         }
         repaint();
+    }
+
+    public void drawGameOver(Graphics g) {
+        g.setColor(new Color(0,0,0));
+        g.setFont(new Font("Bodoni MT Black", Font.BOLD, 40));
+        FontMetrics metrics1 = getFontMetrics(g.getFont());
+        g.drawString("Score: " + applesEaten, (SCREEN_WIDTH - metrics1.stringWidth("Score: " + applesEaten)) / 2, g.getFont().getSize());
+
+        // Game Over text
+
+        g.setFont(new Font("Bodoni MT Black", Font.BOLD, 75));
+        FontMetrics metrics2 = getFontMetrics(g.getFont());
+        g.drawString("Game Over", (SCREEN_WIDTH - metrics2.stringWidth("Game Over")) / 2, SCREEN_HEIGHT / 2);
     }
 
     public class MyKeyAdapter extends KeyAdapter {
